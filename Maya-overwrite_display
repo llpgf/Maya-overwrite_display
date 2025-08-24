@@ -1,0 +1,169 @@
+import maya.cmds as cmds
+import maya.mel as mel
+
+def create_display_override_ui():
+    """Create the main UI window for display override controls"""
+    
+    # Delete existing window if it exists
+    if cmds.window("displayOverrideWindow", exists=True):
+        cmds.deleteUI("displayOverrideWindow")
+    
+    # Create main window
+    window = cmds.window("displayOverrideWindow", title="Display Override Tool", widthHeight=(300, 200))
+    
+    # Create main layout
+    main_layout = cmds.columnLayout(adjustableColumn=True, rowSpacing=5, columnOffset=["both", 10])
+    
+    # Title
+    cmds.text(label="Display Override Tool", font="boldLabelFont", height=30)
+    cmds.separator(height=10)
+    
+    # Override Enable/Disable
+    cmds.text(label="Drawing Override:", align="left")
+    override_frame = cmds.frameLayout(label="Override Settings", collapsable=False)
+    override_layout = cmds.columnLayout(adjustableColumn=True, rowSpacing=5)
+    
+    # Override checkbox
+    override_var = cmds.checkBox(label="Enable Override", value=False, changeCommand=lambda x: update_override_state(x))
+    cmds.separator(height=5)
+    
+    # Display Type dropdown
+    cmds.text(label="Display Type:", align="left")
+    display_type_var = cmds.optionMenu()
+    cmds.menuItem(label="Normal")
+    cmds.menuItem(label="Template") 
+    cmds.menuItem(label="Reference")
+    
+    cmds.setParent("..")  # Exit frameLayout
+    cmds.setParent("..")  # Exit columnLayout
+    
+    cmds.separator(height=10)
+    
+    # Buttons
+    button_layout = cmds.rowLayout(numberOfColumns=2, columnWidth2=(140, 140), columnAttach2=("both", "both"), columnOffset2=(5, 5))
+    cmds.button(label="Apply to Selected", command=lambda x: apply_to_selected(override_var, display_type_var))
+    cmds.button(label="Close", command=lambda x: cmds.deleteUI("displayOverrideWindow"))
+    cmds.setParent("..")  # Exit rowLayout
+    
+    # Show window
+    cmds.showWindow(window)
+    
+    return window
+
+def update_override_state(state):
+    """Update the override state based on checkbox"""
+    # This function can be expanded to show/hide other controls based on override state
+    pass
+
+def apply_to_selected(override_checkbox, display_type_menu):
+    """Apply the selected settings to all selected objects"""
+    
+    # Get selected objects
+    selected = cmds.ls(selection=True)
+    
+    if not selected:
+        cmds.warning("No objects selected!")
+        return
+    
+    # Get override state
+    override_enabled = cmds.checkBox(override_checkbox, query=True, value=True)
+    
+    # Get display type
+    display_type = cmds.optionMenu(display_type_menu, query=True, value=True)
+    
+    # Convert display type to numeric value
+    display_type_map = {
+        "Normal": 0,
+        "Template": 1, 
+        "Reference": 2
+    }
+    display_value = display_type_map.get(display_type, 0)
+    
+    # Apply to each selected object
+    for obj in selected:
+        try:
+            # Set override enabled/disabled
+            cmds.setAttr(obj + ".overrideEnabled", override_enabled)
+            
+            # If override is enabled, set the display type
+            if override_enabled:
+                cmds.setAttr(obj + ".overrideDisplayType", display_value)
+                
+        except Exception as e:
+            cmds.warning(f"Could not set attributes for {obj}: {str(e)}")
+    
+    # Show result message
+    if override_enabled:
+        cmds.confirmDialog(title="Success", 
+                          message=f"Applied override settings to {len(selected)} object(s):\nOverride: Enabled\nDisplay Type: {display_type}",
+                          button="OK")
+    else:
+        cmds.confirmDialog(title="Success", 
+                          message=f"Disabled override for {len(selected)} object(s)",
+                          button="OK")
+
+def quick_apply_normal():
+    """Quick function to set selected objects to normal display"""
+    selected = cmds.ls(selection=True)
+    if not selected:
+        cmds.warning("No objects selected!")
+        return
+        
+    for obj in selected:
+        try:
+            cmds.setAttr(obj + ".overrideEnabled", True)
+            cmds.setAttr(obj + ".overrideDisplayType", 0)  # Normal
+        except:
+            pass
+    print(f"Set {len(selected)} object(s) to Normal display")
+
+def quick_apply_template():
+    """Quick function to set selected objects to template display"""
+    selected = cmds.ls(selection=True)
+    if not selected:
+        cmds.warning("No objects selected!")
+        return
+        
+    for obj in selected:
+        try:
+            cmds.setAttr(obj + ".overrideEnabled", True)
+            cmds.setAttr(obj + ".overrideDisplayType", 1)  # Template
+        except:
+            pass
+    print(f"Set {len(selected)} object(s) to Template display")
+
+def quick_apply_reference():
+    """Quick function to set selected objects to reference display"""
+    selected = cmds.ls(selection=True)
+    if not selected:
+        cmds.warning("No objects selected!")
+        return
+        
+    for obj in selected:
+        try:
+            cmds.setAttr(obj + ".overrideEnabled", True)
+            cmds.setAttr(obj + ".overrideDisplayType", 2)  # Reference
+        except:
+            pass
+    print(f"Set {len(selected)} object(s) to Reference display")
+
+def disable_override():
+    """Quick function to disable override for selected objects"""
+    selected = cmds.ls(selection=True)
+    if not selected:
+        cmds.warning("No objects selected!")
+        return
+        
+    for obj in selected:
+        try:
+            cmds.setAttr(obj + ".overrideEnabled", False)
+        except:
+            pass
+    print(f"Disabled override for {len(selected)} object(s)")
+
+# Create the UI when script is run
+if __name__ == "__main__":
+    create_display_override_ui()
+
+# Alternative: Run this to create the UI
+# create_display_override_ui()
